@@ -9,7 +9,9 @@ const WIDTH = 7;
 const HEIGHT = 6;
 
 let currPlayer = 1; // active player: 1 or 2
+let playing = false; // game currently started: true or false
 let board = []; // array of rows, each row is array of cells  (board[y][x])
+const topButton = document.getElementById("top-button");
 const results = document.getElementById("results");
 
 /** makeBoard: create in-JS board structure:
@@ -68,6 +70,7 @@ function placeInTable(y, x) {
   let newPiece = document.createElement("div");
   newPiece.classList.add("piece");
   newPiece.classList.add(`color${currPlayer}`);
+  newPiece.classList.add("drop");
 
   let targetTd = document.getElementById(`${y}-${x}`);
   targetTd.appendChild(newPiece);
@@ -77,23 +80,48 @@ function placeInTable(y, x) {
 
 function endGame(msg) {
   results.classList.toggle("hidden");
-  results.innerText = msg + " Play again?";
+  playing = false;
+  results.innerText = msg + " Reset?";
+
+  topButton.classList.remove("start");
+  topButton.classList.remove("p1-turn");
+  topButton.classList.remove("p2-turn");
+  topButton.classList.add("game-complete");
+  topButton.innerText = "Game Complete";
 }
 
-//** restart: clear in-memory board, redraw HTML table, set current player to 1, hide results button */
+//** reset: clear in-memory board, redraw HTML table, set current player to 1, hide results button, reset top button */
 
-function restart() {
+function reset() {
   document.getElementById("board").innerHTML = "";
   makeHtmlBoard();
   board = [];
   makeBoard();
   currPlayer = 1;
   results.classList.toggle("hidden");
+
+  topButton.classList.remove("p1-turn");
+  topButton.classList.remove("p2-turn");
+  topButton.classList.remove("game-complete");
+  topButton.classList.add("start");
+  topButton.innerText = "Start Game";
+}
+
+//** start: set playing = true, set top-button to read "Player 1's Turn" */
+function start() {
+  playing = true;
+  topButton.classList.remove("start");
+  topButton.classList.remove("p2-turn");
+  topButton.classList.add("p1-turn");
+  topButton.innerText = "Player 1's Turn";
 }
 
 /** handleClick: handle click of column top to play piece */
 
 function handleClick(evt) {
+  // if game not started, ignore click
+  if (playing === false) return;
+
   // get x from ID of clicked cell
   let x = +evt.target.id;
 
@@ -117,7 +145,25 @@ function handleClick(evt) {
   if (checkForTie()) endGame(`It's a tie!`);
 
   // switch players
-  currPlayer = 3 - currPlayer;
+  if (currPlayer === 1) {
+    currPlayer = 2;
+    topButton.classList.remove("p1-turn");
+    topButton.classList.add("p2-turn");
+    topButton.innerText = "Player 2's Turn";
+  } else {
+    currPlayer = 1;
+    topButton.classList.remove("p2-turn");
+    topButton.classList.add("p1-turn");
+    topButton.innerText = "Player 1's Turn";
+  }
+}
+
+/** handleTopButtonClick: if button says Start Game, start(); otherwise, do nothing */
+
+function handleTopButtonClick() {
+  if (topButton.classList.contains("start")) {
+    start();
+  }
 }
 
 /** checkForTie: check board cell-by-cell for empty cells; if any found, return false, else return true */
@@ -193,4 +239,5 @@ function checkForWin() {
 makeBoard();
 makeHtmlBoard();
 
-results.addEventListener("click", restart);
+results.addEventListener("click", reset);
+topButton.addEventListener("click", handleTopButtonClick);
